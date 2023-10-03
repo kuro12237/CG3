@@ -36,6 +36,11 @@ private:
 	stringstream file{};
 
 
+	unique_ptr<Sprite>sprite_ = nullptr;
+	WorldTransform spriteWorldTransform_{};
+	uint32_t SpriteTexHandle = 0;
+	Vector4 color = { 1,1,1,1 };
+
 	unique_ptr<Player>player_ = nullptr;
 	unique_ptr<Enemy>enemy_=nullptr;
 	unique_ptr <CollisionManager> collisionManager = nullptr;

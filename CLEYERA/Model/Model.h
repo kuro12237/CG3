@@ -17,6 +17,8 @@ enum SUseLight
 	HARF_LAMBERT
 };
 
+
+
 class Model
 {
 public:
@@ -45,13 +47,14 @@ public:
 	/// </summary>
 	void UseLight(SUseLight use);
 
+
 #pragma region Set
 	void SetTexHandle(uint32_t texHandle) { texHandle_ = texHandle; }
 	void SetUvScale(Vector3 uvScale) { uvScale_ = uvScale; }
 	void SetUvRotate(Vector3 uvRotate) { uvRotate_ = uvRotate; }
 	void SetUvTranslate(Vector3 uvTranslate) { uvTranslate_ = uvTranslate; }
 	void SetColor(Vector4 color) { color_ = color; }
-
+	//void SetBlendMode(BlendMode blendMode) { blendMode_ = blendMode; }
 
 #pragma endregion 
 

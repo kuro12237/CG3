@@ -22,17 +22,17 @@ void SpriteBoxState::Draw(Sprite* state, WorldTransform worldTransform)
 	Vector2 pos = state->GetPos();
 	Vector2 size = state->GetSize();
 
-	vertexData[0].position = { pos.x,pos.y+size.y,1,1 };
+	vertexData[0].position = { pos.x,pos.y+size.y,0,1 };
 	vertexData[0].texcoord = { 0.0f,1.0f };
 	
-	vertexData[1].position = { pos.x ,pos.y,1,1 };
+	vertexData[1].position = { pos.x ,pos.y,0,1 };
 	vertexData[1].texcoord = { 0.0f,0.0f };
 
 
-	vertexData[2].position = { pos.x + size.x,pos.y+size.y,1,1 };
+	vertexData[2].position = { pos.x + size.x,pos.y+size.y,0,1 };
 	vertexData[2].texcoord = { 1.0f,1.0f };
 
-	vertexData[3].position = { pos.x + size.x,pos.y,1,1 };
+	vertexData[3].position = { pos.x + size.x,pos.y,0,1 };
 	vertexData[3].texcoord = { 1.0f,0.0f };
 
 
@@ -62,7 +62,7 @@ void SpriteBoxState::CommandCall(uint32_t texHandle)
 	}
 	else if (!texHandle == 0)
 	{
-		PSO = GraphicsPipelineManager::GetInstance()->GetPso().Sprite;
+		PSO = GraphicsPipelineManager::GetInstance()->GetPso().Sprite2d.none;
 	}
 
 

@@ -26,7 +26,7 @@ void ModelObjState::Draw(Model* state, WorldTransform worldTransform, ViewProjec
 
 	worldTransform.TransfarMatrix(resource_.wvpResource, viewprojection);
 	Commands commands = DirectXCommon::GetInstance()->GetCommands();
-	SPSOProperty PSO = GraphicsPipelineManager::GetInstance()->GetPso().Sprite;
+	SPSOProperty PSO = GraphicsPipelineManager::GetInstance()->GetPso().Sprite3d.none;
 
 	commands.m_pList->SetGraphicsRootSignature(PSO.rootSignature.Get());
 	commands.m_pList->SetPipelineState(PSO.GraphicsPipelineState.Get());

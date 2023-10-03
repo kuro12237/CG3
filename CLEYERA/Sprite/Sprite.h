@@ -2,6 +2,7 @@
 #include"Pch.h"
 #include"WorldTransform.h"
 #include"Sprite/state/SpriteBoxState.h"
+#include"GraphicsPipelineManager.h"
 
 class Sprite
 {
@@ -59,6 +60,8 @@ private:
 	Vector3 uvScale_ = { 1,1,1 };
 	Vector3 uvRotate_ = { 0,0,0 };
 	Vector3 uvTranslate_ = { 0,0,0 };
+
+	BlendMode blendMode_= BlendNone;
 
 	ISpriteState* state_ = {};
 };

@@ -13,12 +13,33 @@ struct SPSOProperty
 
 };
 
+struct  SBlendPSO
+{
+	SPSOProperty none;
+	SPSOProperty Add;
+	SPSOProperty Subtruct;
+	SPSOProperty Multiply;
+	SPSOProperty Screen;
+
+};
+
+
 struct SPSO
 {
 	SPSOProperty shape;
 	SPSOProperty Line;
-	SPSOProperty Sprite;
+	SBlendPSO Sprite2d;
+	SBlendPSO Sprite3d;
 	SPSOProperty Herf_Lambert;
+};
+
+enum  BlendMode
+{
+	BlendNone,
+	BlendAdd,
+	BlendSubtruct,
+	BlendMultiply,
+	BlendScreen,
 };
 
 class GraphicsPipelineManager
@@ -35,7 +56,9 @@ private:
 	static void CreatePSO();
 	static  SPSOProperty CreateShape(ComPtr<ID3D12Device>device,Commands command,SShaderMode shader);
 	static SPSOProperty CreateLine(ComPtr<ID3D12Device>device, Commands commands, SShaderMode shader);
-	static SPSOProperty CreateSprite(ComPtr<ID3D12Device>device, Commands commands, SShaderMode shader);
+	static SPSOProperty CreateSprite3dNone(ComPtr<ID3D12Device>device, Commands commands, SShaderMode shader);
+	static SPSOProperty CreateSprite2dNone(ComPtr<ID3D12Device>device, Commands commands, SShaderMode shader);
+
 	static SPSOProperty CreateHerf_Lambert(ComPtr<ID3D12Device>device, Commands commands, SShaderMode shader);
 
 	SPSO pso = {};

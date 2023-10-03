@@ -137,7 +137,7 @@ void ModelSphereState::CommandCall(Model*state)
 
 	//テクスチャがある場合
 	if (!state->GetTexHandle() == 0) {
-		PSO = GraphicsPipelineManager::GetInstance()->GetPso().Sprite;
+		PSO = GraphicsPipelineManager::GetInstance()->GetPso().Sprite3d.none;
 	}
 	if (state->GetUseLight() == HARF_LAMBERT)
 	{

@@ -73,7 +73,7 @@ void ModelPlaneState::CommandCall(uint32_t texHandle)
 		PSO = GraphicsPipelineManager::GetInstance()->GetPso().shape;
 	}else if (!texHandle == 0)
 	{
-		PSO = GraphicsPipelineManager::GetInstance()->GetPso().Sprite;
+		PSO = GraphicsPipelineManager::GetInstance()->GetPso().Sprite3d.none;
 	}
 
 	

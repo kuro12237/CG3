@@ -7,6 +7,8 @@ void Sprite::Initialize(ISpriteState* state, Vector2 pos, Vector2 size)
 
 	Pos_ = pos;
 	size_ = size;
+	blendMode_ = BlendNone;
+
 }
 
 void Sprite::Draw(WorldTransform worldTransform)

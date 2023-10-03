@@ -23,6 +23,14 @@ void DebugScene::Initialize(GameManager* Scene)
 
 	enemy_ = make_unique<Enemy>();
 	enemy_->Initialize();
+
+	sprite_ = make_unique<Sprite>();
+
+	SpriteTexHandle = TextureManager::LoadTexture("Resources/CLEYERA.png");
+	sprite_->SetTexHandle(SpriteTexHandle);
+	sprite_->Initialize(new SpriteBoxState,{0,0},{320,320});
+
+	spriteWorldTransform_.Initialize();
 }
 
 void DebugScene::Update(GameManager* Scene)
@@ -36,6 +44,11 @@ void DebugScene::Update(GameManager* Scene)
 	ImGui::Text("0 Pushkey PlayAudio");
 	ImGui::Text("9 Pushkey StateChange");
 	ImGui::End();
+
+	ImGui::Begin("SpriteColor");
+	ImGui::ColorPicker4("color", &color.x);
+	ImGui::End();
+	sprite_->SetColor(color);
 
 	if (Input::GetInstance()->PushKeyPressed(DIK_9))
 	{
@@ -51,16 +64,21 @@ void DebugScene::Update(GameManager* Scene)
 	enemy_->Update();
 	
 	CheckAllCollision();
+	
+	spriteWorldTransform_.UpdateMatrix();
+
 	viewProjection.UpdateMatrix();
 	viewProjection = DebugTools::ConvertViewProjection(viewProjection);
 	
-	
+
 }
 
 void DebugScene::Draw(GameManager* Scene)
 {
 	player_->Draw(viewProjection);
 	enemy_->Draw(viewProjection);
+
+	sprite_->Draw(spriteWorldTransform_);
 
 	Scene;
 }
