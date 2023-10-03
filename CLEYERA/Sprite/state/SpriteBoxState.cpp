@@ -47,10 +47,37 @@ void SpriteBoxState::Draw(Sprite* state, WorldTransform worldTransform)
 
 	worldTransform.TransfarMatrix(resource_.wvpResource,viewprojection,OrthographicMatrix);
 
-	CommandCall(state->GetTexHandle());
+	CommandCall(state->GetTexHandle(),state);
 
 }
-void SpriteBoxState::CommandCall(uint32_t texHandle)
+SPSOProperty SpriteBoxState::Get2dSpritePipeline(Sprite* state)
+{
+	SPSOProperty PSO = {};
+
+	switch (state->GetBlendMode())
+	{
+	case BlendNone:
+		PSO = GraphicsPipelineManager::GetInstance()->GetPso().Sprite2d.none;
+		break;
+	case BlendAdd:
+		PSO = GraphicsPipelineManager::GetInstance()->GetPso().Sprite2d.Add;
+		break;
+	case BlendSubtruct:
+		PSO = GraphicsPipelineManager::GetInstance()->GetPso().Sprite2d.Subtruct;
+		break;
+	case BlendMultiply:
+		PSO = GraphicsPipelineManager::GetInstance()->GetPso().Sprite2d.Multiply;
+		break;
+	case BlendScreen:
+		PSO = GraphicsPipelineManager::GetInstance()->GetPso().Sprite2d.Screen;
+		break;
+
+	default:
+		break;
+	}
+	return PSO;
+}
+void SpriteBoxState::CommandCall(uint32_t texHandle,Sprite* state)
 {
 	Commands commands = DirectXCommon::GetInstance()->GetCommands();
 
@@ -62,7 +89,7 @@ void SpriteBoxState::CommandCall(uint32_t texHandle)
 	}
 	else if (!texHandle == 0)
 	{
-		PSO = GraphicsPipelineManager::GetInstance()->GetPso().Sprite2d.none;
+		PSO = Get2dSpritePipeline(state);
 	}
 
 

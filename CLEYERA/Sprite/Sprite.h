@@ -20,6 +20,7 @@ public:
 	void SetUvRotate(Vector3 uvRotate) { uvRotate_ = uvRotate; }
 	void SetUvTranslate(Vector3 uvTranslate) { uvTranslate_ = uvTranslate; }
 	void SetColor(Vector4 color) { color_ = color; }
+	void SetBlendMode(BlendMode blendMode) { blendMode_ = blendMode; }
 #pragma endregion 
 
 #pragma region get
@@ -31,6 +32,7 @@ public:
 	Vector3 GetuvRotate() { return uvRotate_; }
 	Vector3 GetuvTranslate() { return uvTranslate_; }
 
+	BlendMode GetBlendMode() {return blendMode_; }
 
 	/// <summary>
 	/// GetSpritePos

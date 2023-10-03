@@ -16,7 +16,10 @@ public:
 	void Draw(Sprite* state, WorldTransform worldTransform)override;
 
 private:
-	void CommandCall(uint32_t texHandle);
+
+	SPSOProperty Get2dSpritePipeline(Sprite* state);
+
+	void CommandCall(uint32_t texHandle, Sprite* state);
 
 	ResourcePeroperty resource_ = {};
 
