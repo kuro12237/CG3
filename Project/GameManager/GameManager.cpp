@@ -31,10 +31,10 @@ void GameManager::Run()
 	{
 		Cleyera::BeginFlame();
 	
-		Scene_->Update(this);
 		DebugTools::UpdateExecute(0);
 		DebugTools::UpdateExecute(1);
-
+		Scene_->Update(this);
+	
 		DebugTools::DrawExecute(0);
 		DebugTools::DrawExecute(1);
 
