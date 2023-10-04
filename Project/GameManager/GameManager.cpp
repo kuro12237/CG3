@@ -45,6 +45,7 @@ void GameManager::Run()
 
 void GameManager::ChangeState(IScene *newScene)
 {
+	TextureManager::AllUnTexture();
 	delete Scene_;
 	Scene_ = newScene;
 	Scene_->Initialize(this);

@@ -5,8 +5,8 @@
 
 struct texResourceProperty
 {
-	D3D12_CPU_DESCRIPTOR_HANDLE SrvHandleCPU;
-	D3D12_GPU_DESCRIPTOR_HANDLE SrvHandleGPU;
+	D3D12_CPU_DESCRIPTOR_HANDLE SrvHandleCPU{};
+	D3D12_GPU_DESCRIPTOR_HANDLE SrvHandleGPU{};
 	ComPtr<ID3D12Resource> Resource;
 };
 
@@ -40,7 +40,7 @@ public:
 	/// </summary>
 	/// <param name="texHandle"></param>
 	/// <returns></returns>
-	static void AllUnTexture(uint32_t texHandle);
+	static void AllUnTexture();
 
 	static void texCommand(uint32_t texhandle);
 private:

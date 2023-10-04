@@ -164,9 +164,8 @@ uint32_t TextureManager::LoadTexture(const std::string& filePath)
 	return indexTex;
 }
 
-void TextureManager::AllUnTexture(uint32_t texHandle)
+void TextureManager::AllUnTexture()
 {
-	texHandle;
 	for (int i = indexTex; i > 0; i--)
 	{
 		TextureManager::GetInstance()->tex[i].Resource.Reset();

@@ -37,10 +37,6 @@ void Audio::Initialize()
 void Audio::Finalize()
 {
 	Audio::GetInstance()->xAudio.Reset();
-	for (uint32_t i = 0; i < kSoundDataMax; i++) {
-		SoundUnLoad(i);
-	}
-
 }
 
 uint32_t Audio::SoundLoadWave(const char* filename)
@@ -91,14 +87,19 @@ uint32_t Audio::SoundLoadWave(const char* filename)
 	return Audio::GetInstance()->soundDataCount_;
 }
 
-void Audio::SoundUnLoad(uint32_t soundHandle)
+void Audio::SoundUnLoad()
 {
+	for (int i = Audio::GetInstance()->soundDataCount_; i >0 ; i--)
+	{
+		delete[] Audio::GetInstance()->soundData_[i].pBuffer;
+		Audio::GetInstance()->soundData_[i].pBuffer = 0;
+		Audio::GetInstance()->soundData_[i].bufferSize = 0;
+		Audio::GetInstance()->soundData_[i].wfex = {};
+	}
+
 	//‚·‚×‚Ä‹ó“ñ‚·‚é
-	delete[] Audio::GetInstance()->soundData_[soundHandle].pBuffer;
-	Audio::GetInstance()->soundData_[soundHandle].pBuffer = 0;
-	Audio::GetInstance()->soundData_[soundHandle].bufferSize = 0;
-	Audio::GetInstance()->soundData_[soundHandle].wfex = {};
-	Audio::GetInstance()->soundDataCount_--;
+
+	Audio::GetInstance()->soundDataCount_ = 0;
 }
 
 void Audio::AudioPlayWave(uint32_t soundHandle)
