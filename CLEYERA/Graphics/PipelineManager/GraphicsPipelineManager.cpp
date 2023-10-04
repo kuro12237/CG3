@@ -11,10 +11,111 @@ void GraphicsPipelineManager::Initialize()
 	SPSO pso{};
 
 	CreatePSO(pso);
-	Create2dSpritePSO(pso);
+	//2d
+	Create2dSpritePSOs(pso);
 	LogManager::CompliteLog("Sprite2dPSO");
+	//3d
+	Create3dSpritePSOs(pso);
+	LogManager::CompliteLog("Sprite3dPSO");
 
 	GraphicsPipelineManager::GetInstance()->pso = pso;
+}
+
+void GraphicsPipelineManager::CreateRootSignature(ComPtr<ID3D12Device> device, D3D12_ROOT_SIGNATURE_DESC& descriptionRootSignature, SPSOProperty& result)
+{
+	//バイナリする
+	HRESULT hr = D3D12SerializeRootSignature(&descriptionRootSignature,
+		D3D_ROOT_SIGNATURE_VERSION_1, &result.signatureBlob, &result.errorBlob);
+	if (FAILED(hr))
+	{
+		LogManager::Log(reinterpret_cast<char*>(result.errorBlob->GetBufferPointer()));
+		assert(false);
+	}
+
+	//バイナリを元に生成
+	hr = device->CreateRootSignature(
+		0,
+		result.signatureBlob->GetBufferPointer(),
+		result.signatureBlob->GetBufferSize(),
+		IID_PPV_ARGS(&result.rootSignature)
+	);
+	assert(SUCCEEDED(hr));
+}
+
+void GraphicsPipelineManager::SettingInputElementDesc(D3D12_INPUT_ELEMENT_DESC &inputElementDescs, LPCSTR SemanticName, UINT SemanticIndex, DXGI_FORMAT Format, UINT AlignedByteOffset)
+{
+	inputElementDescs.SemanticName = SemanticName;
+	inputElementDescs.SemanticIndex = SemanticIndex;
+	inputElementDescs.Format = Format;
+	inputElementDescs.AlignedByteOffset = AlignedByteOffset;
+
+}
+
+void GraphicsPipelineManager::SettingBlendState(D3D12_RENDER_TARGET_BLEND_DESC& blenddesc, BlendMode mode)
+{
+	blenddesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+	blenddesc.BlendEnable = true;
+
+	switch (mode)
+	{
+	case BlendNone:
+		blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE;
+		blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;
+		blenddesc.BlendOp = D3D12_BLEND_OP_ADD;
+		blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
+		blenddesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+		break;
+	case BlendAdd:
+		blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE;
+		blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;
+		blenddesc.BlendOp = D3D12_BLEND_OP_ADD;
+		blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
+		blenddesc.DestBlend = D3D12_BLEND_ONE;
+		break;
+	case BlendSubtruct:
+		blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE;
+		blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;
+		blenddesc.BlendOp = D3D12_BLEND_OP_REV_SUBTRACT;
+		blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
+		blenddesc.DestBlend = D3D12_BLEND_ONE;
+		break;
+	case BlendMultiply:
+		blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE;
+		blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;
+		blenddesc.BlendOp = D3D12_BLEND_OP_ADD;
+		blenddesc.SrcBlend = D3D12_BLEND_ZERO;
+		blenddesc.DestBlend = D3D12_BLEND_SRC_COLOR;
+		break;
+	case BlendScreen:
+		blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE;
+		blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;
+		blenddesc.BlendOp = D3D12_BLEND_OP_ADD;
+		blenddesc.SrcBlend = D3D12_BLEND_INV_DEST_COLOR;
+		blenddesc.DestBlend = D3D12_BLEND_ONE;
+		break;
+	default:
+		break;
+	}
+
+}
+
+void GraphicsPipelineManager::SettingRasterizer(D3D12_RASTERIZER_DESC& rasterizerDesc, D3D12_CULL_MODE CullMode, D3D12_FILL_MODE FillMode)
+{
+	rasterizerDesc.CullMode = CullMode;
+	//三角形の中を塗りつぶす
+	rasterizerDesc.FillMode = FillMode;
+}
+
+void GraphicsPipelineManager::SettingDepth(D3D12_DEPTH_STENCIL_DESC& despthStencilDesc, bool EnableFlag, D3D12_DEPTH_WRITE_MASK writeMask, D3D12_COMPARISON_FUNC Func)
+{
+	despthStencilDesc.DepthEnable = EnableFlag;
+	despthStencilDesc.DepthWriteMask = writeMask;
+	despthStencilDesc.DepthFunc = Func;
 }
 
 void GraphicsPipelineManager::CreatePSO(SPSO &pso)
@@ -29,15 +130,12 @@ void GraphicsPipelineManager::CreatePSO(SPSO &pso)
 	pso.Line = CreateLine(device.Get(), commands, shader.shape);
 	LogManager::CompliteLog("CreateLinePSO");
 
-	pso.Sprite3d.none = CreateSprite3dNone(device.Get(), commands, shader.sprite);
-	LogManager::CompliteLog("CreateSpritePSO");
-
 	pso.Herf_Lambert = CreateHerf_Lambert(device.Get(), commands, shader.light);
 	LogManager::CompliteLog("CreateHerf_LightPSO");
 
 }
 
-void GraphicsPipelineManager::Create2dSpritePSO(SPSO &pso)
+void GraphicsPipelineManager::Create2dSpritePSOs(SPSO &pso)
 {
 	ComPtr<ID3D12Device> device = DirectXCommon::GetInstance()->GetDevice();
 	Commands commands = DirectXCommon::GetInstance()->GetCommands();
@@ -59,11 +157,19 @@ void GraphicsPipelineManager::Create2dSpritePSO(SPSO &pso)
 	LogManager::CompliteLog("CreateSprite2dScreenPSO");
 }
 
+void GraphicsPipelineManager::Create3dSpritePSOs(SPSO& pso)
+{
+	ComPtr<ID3D12Device> device = DirectXCommon::GetInstance()->GetDevice();
+	Commands commands = DirectXCommon::GetInstance()->GetCommands();
+	SShaders shader = ShaderManager::Getinstance()->GetShader();
+
+	pso.Sprite3d.none = CreateSprite3dNone(device.Get(), commands, shader.sprite);
+	LogManager::CompliteLog("CreateSpritePSO");
+}
+
 SPSOProperty GraphicsPipelineManager::CreateShape(ComPtr<ID3D12Device> device, Commands command, SShaderMode shader)
 {
 	SPSOProperty result;
-
-
 	//RootSignature作成
 	D3D12_ROOT_SIGNATURE_DESC descriptionRootSignature{};
 
@@ -84,68 +190,47 @@ SPSOProperty GraphicsPipelineManager::CreateShape(ComPtr<ID3D12Device> device, C
 	descriptionRootSignature.pParameters = rootParameters;
 	descriptionRootSignature.NumParameters = _countof(rootParameters);
 
-	//シリアライズしてバイナリにする
-
-	HRESULT hr = D3D12SerializeRootSignature(&descriptionRootSignature,
-		D3D_ROOT_SIGNATURE_VERSION_1, &result.signatureBlob, &result.errorBlob);
-	if (FAILED(hr))
-	{
-		LogManager::Log(reinterpret_cast<char*>(result.errorBlob->GetBufferPointer()));
-		assert(false);
-	}
-
-	//バイナリを元に生成
-
-	hr = device->CreateRootSignature(
-		0,
-		result.signatureBlob->GetBufferPointer(),
-		result.signatureBlob->GetBufferSize(),
-		IID_PPV_ARGS(&result.rootSignature)
+	//RootSignatureの作成
+	CreateRootSignature(
+		device,
+		descriptionRootSignature,
+		result
 	);
-	assert(SUCCEEDED(hr));
 
 	//InputLayoutの設定
 	D3D12_INPUT_ELEMENT_DESC inputElementDescs[1] = {};
-	inputElementDescs[0].SemanticName = "POSITION";
-	inputElementDescs[0].SemanticIndex = 0;
-	inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	inputElementDescs[0].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+	SettingInputElementDesc(
+		inputElementDescs[0],
+		"POSITION",
+		0,
+		DXGI_FORMAT_R32G32B32A32_FLOAT,
+		D3D12_APPEND_ALIGNED_ELEMENT
+	);
+
 	D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
 	inputLayoutDesc.pInputElementDescs = inputElementDescs;
 	inputLayoutDesc.NumElements = _countof(inputElementDescs);
 
-
-	//BlendStateの設定を行う
+	//BlendStateの設定
 	D3D12_BLEND_DESC blendDesc{};
-	//すべての色要素を書き込む
 	D3D12_RENDER_TARGET_BLEND_DESC& blenddesc = blendDesc.RenderTarget[0];
-	blenddesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+	SettingBlendState(blenddesc, BlendNone);
 
-	blenddesc.BlendEnable = true;
-	blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
-	blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE;
-	blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;
-	//半透明合成設定
-	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;
-	blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
-	blenddesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
-
-
-
-	//RasterrizerStateぼ設定
+	//Rasterrizer設定
 	D3D12_RASTERIZER_DESC rasterizerDesc{};
-
-	//裏面（時計回り）を表示しない
-	rasterizerDesc.CullMode = D3D12_CULL_MODE_FRONT;
-	//三角形の中を塗りつぶす
-	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
-
-
+	SettingRasterizer(
+		rasterizerDesc,
+		D3D12_CULL_MODE_FRONT,
+		D3D12_FILL_MODE_SOLID
+	);
+	//深度
 	D3D12_DEPTH_STENCIL_DESC despthStencilDesc{};
-	despthStencilDesc.DepthEnable = true;
-	despthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-	despthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-
+	SettingDepth(
+		despthStencilDesc,
+		true,
+		D3D12_DEPTH_WRITE_MASK_ALL,
+		D3D12_COMPARISON_FUNC_LESS_EQUAL
+	);
 
 	//PSOの生成
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
@@ -173,11 +258,9 @@ SPSOProperty GraphicsPipelineManager::CreateShape(ComPtr<ID3D12Device> device, C
 	graphicsPipelineStateDesc.SampleDesc.Count = 1;
 	graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 
-	hr = device->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,
+	HRESULT hr = device->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,
 		IID_PPV_ARGS(&result.GraphicsPipelineState));
 	assert(SUCCEEDED(hr));
-
-
 
 	return result;
 }
@@ -186,10 +269,8 @@ SPSOProperty GraphicsPipelineManager::CreateLine(ComPtr<ID3D12Device>device, Com
 {
 	SPSOProperty result;
 
-
 	//RootSignature作成
 	D3D12_ROOT_SIGNATURE_DESC descriptionRootSignature{};
-
 	descriptionRootSignature.Flags =
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
@@ -203,72 +284,53 @@ SPSOProperty GraphicsPipelineManager::CreateLine(ComPtr<ID3D12Device>device, Com
 	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 	rootParameters[1].Descriptor.ShaderRegister = 0;
 
-
 	descriptionRootSignature.pParameters = rootParameters;
 	descriptionRootSignature.NumParameters = _countof(rootParameters);
 
-	//シリアライズしてバイナリにする
-
-	HRESULT hr = D3D12SerializeRootSignature(&descriptionRootSignature,
-		D3D_ROOT_SIGNATURE_VERSION_1, &result.signatureBlob, &result.errorBlob);
-	if (FAILED(hr))
-	{
-		LogManager::Log(reinterpret_cast<char*>(result.errorBlob->GetBufferPointer()));
-		assert(false);
-	}
-
-	//バイナリを元に生成
-
-	hr = device->CreateRootSignature(
-		0,
-		result.signatureBlob->GetBufferPointer(),
-		result.signatureBlob->GetBufferSize(),
-		IID_PPV_ARGS(&result.rootSignature)
+	//RootSignatureの作成
+	CreateRootSignature(
+		device,
+		descriptionRootSignature,
+		result
 	);
-	assert(SUCCEEDED(hr));
-
+	
 	//InputLayoutの設定
 	D3D12_INPUT_ELEMENT_DESC inputElementDescs[1] = {};
-	inputElementDescs[0].SemanticName = "POSITION";
-	inputElementDescs[0].SemanticIndex = 0;
-	inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	inputElementDescs[0].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+	SettingInputElementDesc(inputElementDescs[0],
+		"POSITION",
+		0,
+		DXGI_FORMAT_R32G32B32A32_FLOAT,
+		D3D12_APPEND_ALIGNED_ELEMENT
+	);
+
 	D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
 	inputLayoutDesc.pInputElementDescs = inputElementDescs;
 	inputLayoutDesc.NumElements = _countof(inputElementDescs);
 
-
-	//BlendStateの設定を行う
+	//BlendStateの設定
 	D3D12_BLEND_DESC blendDesc{};
-	//すべての色要素を書き込む
-	//blendDesc.RenderTarget[0].RenderTargetWriteMask =
-	//	D3D12_COLOR_WRITE_ENABLE_ALL;
 	D3D12_RENDER_TARGET_BLEND_DESC& blenddesc = blendDesc.RenderTarget[0];
-	blenddesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+	SettingBlendState(
+		blenddesc,
+		BlendNone
+	);
 
-	blenddesc.BlendEnable = true;
-	blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
-	blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE;
-	blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;
-	//半透明合成設定
-	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;
-	blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
-	blenddesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
-
-	//RasterrizerStateぼ設定
+	//Rasterrizer設定
 	D3D12_RASTERIZER_DESC rasterizerDesc{};
+	SettingRasterizer(
+		rasterizerDesc,
+		D3D12_CULL_MODE_FRONT,
+		D3D12_FILL_MODE_SOLID
+	);
 
-	//裏面（時計回り）を表示しない
-	rasterizerDesc.CullMode = D3D12_CULL_MODE_FRONT;
-	//三角形の中を塗りつぶす
-	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
-
-
+    //深度設定
 	D3D12_DEPTH_STENCIL_DESC despthStencilDesc{};
-	despthStencilDesc.DepthEnable = true;
-	despthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-	despthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-
+	SettingDepth(
+		despthStencilDesc,
+		true,
+		D3D12_DEPTH_WRITE_MASK_ALL,
+		D3D12_COMPARISON_FUNC_LESS_EQUAL
+    );
 
 	//PSOの生成
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
@@ -296,12 +358,9 @@ SPSOProperty GraphicsPipelineManager::CreateLine(ComPtr<ID3D12Device>device, Com
 	graphicsPipelineStateDesc.SampleDesc.Count = 1;
 	graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 
-	hr = device->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,
+	HRESULT hr = device->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,
 		IID_PPV_ARGS(&result.GraphicsPipelineState));
 	assert(SUCCEEDED(hr));
-
-
-
 	return result;
 }
 
@@ -327,7 +386,6 @@ SPSOProperty GraphicsPipelineManager::CreateSprite3dNone(ComPtr<ID3D12Device> de
 	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 	rootParameters[1].Descriptor.ShaderRegister = 0;
 
-
 	//DescriptorRanged
 	D3D12_DESCRIPTOR_RANGE descriptorRange[1] = {};
 	descriptorRange[0].BaseShaderRegister = 0;
@@ -340,7 +398,6 @@ SPSOProperty GraphicsPipelineManager::CreateSprite3dNone(ComPtr<ID3D12Device> de
 	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	rootParameters[2].DescriptorTable.pDescriptorRanges = descriptorRange;
 	rootParameters[2].DescriptorTable.NumDescriptorRanges = _countof(descriptorRange);
-
 
 	//Samplerの設定
 	D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};
@@ -357,80 +414,57 @@ SPSOProperty GraphicsPipelineManager::CreateSprite3dNone(ComPtr<ID3D12Device> de
 	descriptionRootSignature.pStaticSamplers = staticSamplers;
 	descriptionRootSignature.NumStaticSamplers = _countof(staticSamplers);
 
-
 	descriptionRootSignature.pParameters = rootParameters;
 	descriptionRootSignature.NumParameters = _countof(rootParameters);
 
-	//シリアライズしてバイナリにする
-
-
-	HRESULT hr = D3D12SerializeRootSignature(&descriptionRootSignature,
-		D3D_ROOT_SIGNATURE_VERSION_1, &SpritePSO.signatureBlob, &SpritePSO.errorBlob);
-	if (FAILED(hr))
-	{
-		LogManager::Log(reinterpret_cast<char*>(SpritePSO.errorBlob->GetBufferPointer()));
-		assert(false);
-	}
-
-	//バイナリを元に生成
-
-	hr = device->CreateRootSignature(0, SpritePSO.signatureBlob->GetBufferPointer(),
-		SpritePSO.signatureBlob->GetBufferSize(), IID_PPV_ARGS(&SpritePSO.rootSignature));
-	assert(SUCCEEDED(hr));
-
-
-
-
+    //RootSignature作成
+	CreateRootSignature(device, descriptionRootSignature, SpritePSO);
 
 	//InputLayoutの設定
 	D3D12_INPUT_ELEMENT_DESC inputElementDescs[2] = {};
-	inputElementDescs[0].SemanticName = "POSITION";
-	inputElementDescs[0].SemanticIndex = 0;
-	inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	inputElementDescs[0].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-
-	inputElementDescs[1].SemanticName = "TEXCOORD";
-	inputElementDescs[1].SemanticIndex = 0;
-	inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
-	inputElementDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-
+	//Position
+	SettingInputElementDesc(
+		inputElementDescs[0],
+		"POSITION",
+		0,
+		DXGI_FORMAT_R32G32B32A32_FLOAT,
+		D3D12_APPEND_ALIGNED_ELEMENT
+	);
+	//Texcoord
+	SettingInputElementDesc(
+		inputElementDescs[1],
+		"TEXCOORD",
+		0,
+		DXGI_FORMAT_R32G32_FLOAT,
+		D3D12_APPEND_ALIGNED_ELEMENT
+	);
 
 	D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
 	inputLayoutDesc.pInputElementDescs = inputElementDescs;
 	inputLayoutDesc.NumElements = _countof(inputElementDescs);
 
-
-	//BlendStateの設定を行う
+	//BlendStateの設定
 	D3D12_BLEND_DESC blendDesc{};
-	//すべての色要素を書き込む
 	D3D12_RENDER_TARGET_BLEND_DESC& blenddesc = blendDesc.RenderTarget[0];
-	blenddesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-	blenddesc.BlendEnable = true;
-
-	blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
-	blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE;
-	blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;
-	//半透明合成設定
-	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;
-	blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
-	blenddesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
-
+	SettingBlendState(blenddesc, BlendNone);
 
 	//RasterrizerStateぼ設定
 	D3D12_RASTERIZER_DESC rasterizerDesc{};
+	SettingRasterizer(
+		rasterizerDesc,
+		D3D12_CULL_MODE_BACK,
+		D3D12_FILL_MODE_SOLID
+	);
 
-	//裏面（時計回り）を表示しない
-	rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
-	//三角形の中を塗りつぶす
-	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
-
+	//深度設定
 	D3D12_DEPTH_STENCIL_DESC despthStencilDesc{};
-	despthStencilDesc.DepthEnable = true;
-	despthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-	despthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-
-
-
+	SettingDepth(
+		despthStencilDesc,
+		true,
+		D3D12_DEPTH_WRITE_MASK_ALL,
+		D3D12_COMPARISON_FUNC_LESS_EQUAL
+	);
+	
 	//PSOの生成
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
 
@@ -458,7 +492,7 @@ SPSOProperty GraphicsPipelineManager::CreateSprite3dNone(ComPtr<ID3D12Device> de
 	graphicsPipelineStateDesc.SampleDesc.Count = 1;
 	graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 
-	hr = device->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,
+	HRESULT hr = device->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,
 		IID_PPV_ARGS(&SpritePSO.GraphicsPipelineState));
 	assert(SUCCEEDED(hr));
 
@@ -471,8 +505,6 @@ SPSOProperty GraphicsPipelineManager::CreateSprite2dNone(ComPtr<ID3D12Device> de
 
 	//RootSignature作成
 	D3D12_ROOT_SIGNATURE_DESC descriptionRootSignature{};
-
-	//descriptionRootSignature = CreateDescriptRootSignature();
 	descriptionRootSignature.Flags =
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
@@ -487,7 +519,6 @@ SPSOProperty GraphicsPipelineManager::CreateSprite2dNone(ComPtr<ID3D12Device> de
 	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 	rootParameters[1].Descriptor.ShaderRegister = 0;
 
-
 	//DescriptorRanged
 	D3D12_DESCRIPTOR_RANGE descriptorRange[1] = {};
 	descriptorRange[0].BaseShaderRegister = 0;
@@ -500,7 +531,6 @@ SPSOProperty GraphicsPipelineManager::CreateSprite2dNone(ComPtr<ID3D12Device> de
 	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	rootParameters[2].DescriptorTable.pDescriptorRanges = descriptorRange;
 	rootParameters[2].DescriptorTable.NumDescriptorRanges = _countof(descriptorRange);
-
 
 	//Samplerの設定
 	D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};
@@ -516,78 +546,57 @@ SPSOProperty GraphicsPipelineManager::CreateSprite2dNone(ComPtr<ID3D12Device> de
 
 	descriptionRootSignature.pStaticSamplers = staticSamplers;
 	descriptionRootSignature.NumStaticSamplers = _countof(staticSamplers);
-
-
 	descriptionRootSignature.pParameters = rootParameters;
 	descriptionRootSignature.NumParameters = _countof(rootParameters);
 
-	//シリアライズしてバイナリにする
-
-
-	HRESULT hr = D3D12SerializeRootSignature(&descriptionRootSignature,
-		D3D_ROOT_SIGNATURE_VERSION_1, &SpritePSO.signatureBlob, &SpritePSO.errorBlob);
-	if (FAILED(hr))
-	{
-		LogManager::Log(reinterpret_cast<char*>(SpritePSO.errorBlob->GetBufferPointer()));
-		assert(false);
-	}
-
-	//バイナリを元に生成
-
-	hr = device->CreateRootSignature(0, SpritePSO.signatureBlob->GetBufferPointer(),
-		SpritePSO.signatureBlob->GetBufferSize(), IID_PPV_ARGS(&SpritePSO.rootSignature));
-	assert(SUCCEEDED(hr));
+	//rootSignatureの作成
+	CreateRootSignature(device, descriptionRootSignature, SpritePSO);
 
 	//InputLayoutの設定
 	D3D12_INPUT_ELEMENT_DESC inputElementDescs[2] = {};
-	inputElementDescs[0].SemanticName = "POSITION";
-	inputElementDescs[0].SemanticIndex = 0;
-	inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	inputElementDescs[0].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-
-	inputElementDescs[1].SemanticName = "TEXCOORD";
-	inputElementDescs[1].SemanticIndex = 0;
-	inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
-	inputElementDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-
+	//position
+	SettingInputElementDesc(
+		inputElementDescs[0],
+		"POSITION",
+		0,
+		DXGI_FORMAT_R32G32B32A32_FLOAT,
+		D3D12_APPEND_ALIGNED_ELEMENT
+	);
+	//texcoord
+	SettingInputElementDesc(
+		inputElementDescs[1],
+		"TEXCOORD",
+		0,
+		DXGI_FORMAT_R32G32_FLOAT,
+		D3D12_APPEND_ALIGNED_ELEMENT
+	);
 
 	D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
 	inputLayoutDesc.pInputElementDescs = inputElementDescs;
 	inputLayoutDesc.NumElements = _countof(inputElementDescs);
 
-
 	//BlendStateの設定を行う
 	D3D12_BLEND_DESC blendDesc{};
-	//すべての色要素を書き込む
 	D3D12_RENDER_TARGET_BLEND_DESC& blenddesc = blendDesc.RenderTarget[0];
-	blenddesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-	blenddesc.BlendEnable = true;
-
-	blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
-	blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE;
-	blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;
-	//半透明合成設定
-	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;
-	blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
-	blenddesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
-
+	SettingBlendState(blenddesc, BlendNone);
 
 	//RasterrizerStateぼ設定
 	D3D12_RASTERIZER_DESC rasterizerDesc{};
+	SettingRasterizer(
+		rasterizerDesc, 
+		D3D12_CULL_MODE_BACK,
+		D3D12_FILL_MODE_SOLID);
 
-	//裏面（時計回り）を表示しない
-	rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
-	//三角形の中を塗りつぶす
-	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
-
+	//深度の設定
 	D3D12_DEPTH_STENCIL_DESC despthStencilDesc{};
-	despthStencilDesc.DepthEnable = true;
-	despthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
-	despthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+	SettingDepth(despthStencilDesc, 
+		true,
+		D3D12_DEPTH_WRITE_MASK_ZERO,
+		D3D12_COMPARISON_FUNC_LESS_EQUAL
+	);
 
 	//PSOの生成
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
-
 	graphicsPipelineStateDesc.pRootSignature = SpritePSO.rootSignature.Get(); //RootSignature
 	graphicsPipelineStateDesc.InputLayout = inputLayoutDesc; //InputLayout
 	graphicsPipelineStateDesc.VS = { shader.vertexBlob->GetBufferPointer(),
@@ -598,7 +607,6 @@ SPSOProperty GraphicsPipelineManager::CreateSprite2dNone(ComPtr<ID3D12Device> de
 	graphicsPipelineStateDesc.RasterizerState = rasterizerDesc; //RasterizerState
 	graphicsPipelineStateDesc.DepthStencilState = despthStencilDesc;
 	graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
-
 
 	//書き込むRTVの情報
 	graphicsPipelineStateDesc.NumRenderTargets = 1;
@@ -611,8 +619,8 @@ SPSOProperty GraphicsPipelineManager::CreateSprite2dNone(ComPtr<ID3D12Device> de
 	//どのように画面に色を打ち込むかの設定(気にしなくて良い)
 	graphicsPipelineStateDesc.SampleDesc.Count = 1;
 	graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
-
-	hr = device->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,
+	
+	HRESULT hr = device->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,
 		IID_PPV_ARGS(&SpritePSO.GraphicsPipelineState));
 	assert(SUCCEEDED(hr));
 
@@ -641,7 +649,6 @@ SPSOProperty GraphicsPipelineManager::CreateSprite2dAdd(ComPtr<ID3D12Device> dev
 	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 	rootParameters[1].Descriptor.ShaderRegister = 0;
 
-
 	//DescriptorRanged
 	D3D12_DESCRIPTOR_RANGE descriptorRange[1] = {};
 	descriptorRange[0].BaseShaderRegister = 0;
@@ -671,77 +678,59 @@ SPSOProperty GraphicsPipelineManager::CreateSprite2dAdd(ComPtr<ID3D12Device> dev
 	descriptionRootSignature.pStaticSamplers = staticSamplers;
 	descriptionRootSignature.NumStaticSamplers = _countof(staticSamplers);
 
-
 	descriptionRootSignature.pParameters = rootParameters;
 	descriptionRootSignature.NumParameters = _countof(rootParameters);
 
 	//シリアライズしてバイナリにする
-
-
-	HRESULT hr = D3D12SerializeRootSignature(&descriptionRootSignature,
-		D3D_ROOT_SIGNATURE_VERSION_1, &SpritePSO.signatureBlob, &SpritePSO.errorBlob);
-	if (FAILED(hr))
-	{
-		LogManager::Log(reinterpret_cast<char*>(SpritePSO.errorBlob->GetBufferPointer()));
-		assert(false);
-	}
-
-	//バイナリを元に生成
-
-	hr = device->CreateRootSignature(0, SpritePSO.signatureBlob->GetBufferPointer(),
-		SpritePSO.signatureBlob->GetBufferSize(), IID_PPV_ARGS(&SpritePSO.rootSignature));
-	assert(SUCCEEDED(hr));
+	CreateRootSignature(
+		device,
+		descriptionRootSignature, 
+		SpritePSO);
 
 	//InputLayoutの設定
 	D3D12_INPUT_ELEMENT_DESC inputElementDescs[2] = {};
-	inputElementDescs[0].SemanticName = "POSITION";
-	inputElementDescs[0].SemanticIndex = 0;
-	inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	inputElementDescs[0].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-
-	inputElementDescs[1].SemanticName = "TEXCOORD";
-	inputElementDescs[1].SemanticIndex = 0;
-	inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
-	inputElementDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-
+	//Position
+	SettingInputElementDesc(
+		inputElementDescs[0],
+		"POSITION",
+		0,
+		DXGI_FORMAT_R32G32B32A32_FLOAT,
+		D3D12_APPEND_ALIGNED_ELEMENT
+	);
+	//Texcoord
+	SettingInputElementDesc(
+		inputElementDescs[1],
+		"TEXCOORD",
+		0,
+		DXGI_FORMAT_R32G32_FLOAT,
+		D3D12_APPEND_ALIGNED_ELEMENT
+	);
 
 	D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
 	inputLayoutDesc.pInputElementDescs = inputElementDescs;
 	inputLayoutDesc.NumElements = _countof(inputElementDescs);
 
-
 	//BlendStateの設定を行う
 	D3D12_BLEND_DESC blendDesc{};
 	//すべての色要素を書き込む
 	D3D12_RENDER_TARGET_BLEND_DESC& blenddesc = blendDesc.RenderTarget[0];
-	blenddesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-	blenddesc.BlendEnable = true;
-
-	blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
-	blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE;
-	blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;
-	//半透明合成設定
-	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;
-	blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
-	blenddesc.DestBlend = D3D12_BLEND_ONE;
-
+	SettingBlendState(blenddesc, BlendAdd);
 
 	//RasterrizerStateぼ設定
 	D3D12_RASTERIZER_DESC rasterizerDesc{};
-
-	//裏面（時計回り）を表示しない
-	rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
-	//三角形の中を塗りつぶす
-	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
-
+	SettingRasterizer(rasterizerDesc, D3D12_CULL_MODE_BACK, D3D12_FILL_MODE_SOLID);
+	
+	//深度設定
 	D3D12_DEPTH_STENCIL_DESC despthStencilDesc{};
-	despthStencilDesc.DepthEnable = true;
-	despthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
-	despthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-
+	SettingDepth(
+		despthStencilDesc,
+		true,
+		D3D12_DEPTH_WRITE_MASK_ZERO,
+		D3D12_COMPARISON_FUNC_LESS_EQUAL
+	);
+	
 	//PSOの生成
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
-
 	graphicsPipelineStateDesc.pRootSignature = SpritePSO.rootSignature.Get(); //RootSignature
 	graphicsPipelineStateDesc.InputLayout = inputLayoutDesc; //InputLayout
 	graphicsPipelineStateDesc.VS = { shader.vertexBlob->GetBufferPointer(),
@@ -752,7 +741,6 @@ SPSOProperty GraphicsPipelineManager::CreateSprite2dAdd(ComPtr<ID3D12Device> dev
 	graphicsPipelineStateDesc.RasterizerState = rasterizerDesc; //RasterizerState
 	graphicsPipelineStateDesc.DepthStencilState = despthStencilDesc;
 	graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
-
 
 	//書き込むRTVの情報
 	graphicsPipelineStateDesc.NumRenderTargets = 1;
@@ -766,7 +754,7 @@ SPSOProperty GraphicsPipelineManager::CreateSprite2dAdd(ComPtr<ID3D12Device> dev
 	graphicsPipelineStateDesc.SampleDesc.Count = 1;
 	graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 
-	hr = device->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,
+	HRESULT hr = device->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,
 		IID_PPV_ARGS(&SpritePSO.GraphicsPipelineState));
 	assert(SUCCEEDED(hr));
 
@@ -795,7 +783,6 @@ SPSOProperty GraphicsPipelineManager::CreateSprite2dSubtract(ComPtr<ID3D12Device
 	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 	rootParameters[1].Descriptor.ShaderRegister = 0;
 
-
 	//DescriptorRanged
 	D3D12_DESCRIPTOR_RANGE descriptorRange[1] = {};
 	descriptorRange[0].BaseShaderRegister = 0;
@@ -808,7 +795,6 @@ SPSOProperty GraphicsPipelineManager::CreateSprite2dSubtract(ComPtr<ID3D12Device
 	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	rootParameters[2].DescriptorTable.pDescriptorRanges = descriptorRange;
 	rootParameters[2].DescriptorTable.NumDescriptorRanges = _countof(descriptorRange);
-
 
 	//Samplerの設定
 	D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};
@@ -825,73 +811,51 @@ SPSOProperty GraphicsPipelineManager::CreateSprite2dSubtract(ComPtr<ID3D12Device
 	descriptionRootSignature.pStaticSamplers = staticSamplers;
 	descriptionRootSignature.NumStaticSamplers = _countof(staticSamplers);
 
-
 	descriptionRootSignature.pParameters = rootParameters;
 	descriptionRootSignature.NumParameters = _countof(rootParameters);
 
-	//シリアライズしてバイナリにする
-
-
-	HRESULT hr = D3D12SerializeRootSignature(&descriptionRootSignature,
-		D3D_ROOT_SIGNATURE_VERSION_1, &SpritePSO.signatureBlob, &SpritePSO.errorBlob);
-	if (FAILED(hr))
-	{
-		LogManager::Log(reinterpret_cast<char*>(SpritePSO.errorBlob->GetBufferPointer()));
-		assert(false);
-	}
-
-	//バイナリを元に生成
-
-	hr = device->CreateRootSignature(0, SpritePSO.signatureBlob->GetBufferPointer(),
-		SpritePSO.signatureBlob->GetBufferSize(), IID_PPV_ARGS(&SpritePSO.rootSignature));
-	assert(SUCCEEDED(hr));
+	//RootSignatureの生成
+	CreateRootSignature(device, descriptionRootSignature, SpritePSO);
 
 	//InputLayoutの設定
 	D3D12_INPUT_ELEMENT_DESC inputElementDescs[2] = {};
-	inputElementDescs[0].SemanticName = "POSITION";
-	inputElementDescs[0].SemanticIndex = 0;
-	inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	inputElementDescs[0].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-
-	inputElementDescs[1].SemanticName = "TEXCOORD";
-	inputElementDescs[1].SemanticIndex = 0;
-	inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
-	inputElementDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-
+	//Position
+	SettingInputElementDesc(inputElementDescs[0],
+		"POSITION",
+		0,
+		DXGI_FORMAT_R32G32B32A32_FLOAT,
+		D3D12_APPEND_ALIGNED_ELEMENT
+	);
+	//TexCoord
+	SettingInputElementDesc(inputElementDescs[1],
+		"TEXCOORD",
+		0,
+		DXGI_FORMAT_R32G32_FLOAT,
+		D3D12_APPEND_ALIGNED_ELEMENT
+	);
 
 	D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
 	inputLayoutDesc.pInputElementDescs = inputElementDescs;
 	inputLayoutDesc.NumElements = _countof(inputElementDescs);
 
-
 	//BlendStateの設定を行う
 	D3D12_BLEND_DESC blendDesc{};
 	//すべての色要素を書き込む
 	D3D12_RENDER_TARGET_BLEND_DESC& blenddesc = blendDesc.RenderTarget[0];
-	blenddesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-	blenddesc.BlendEnable = true;
-
-	blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
-	blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE;
-	blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;
-	//半透明合成設定
-	blenddesc.BlendOp = D3D12_BLEND_OP_REV_SUBTRACT;
-	blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
-	blenddesc.DestBlend = D3D12_BLEND_ONE;
-
+	SettingBlendState(blenddesc, BlendSubtruct);
 
 	//RasterrizerStateぼ設定
 	D3D12_RASTERIZER_DESC rasterizerDesc{};
+	SettingRasterizer(rasterizerDesc, D3D12_CULL_MODE_BACK, D3D12_FILL_MODE_SOLID);
 
-	//裏面（時計回り）を表示しない
-	rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
-	//三角形の中を塗りつぶす
-	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
 	D3D12_DEPTH_STENCIL_DESC despthStencilDesc{};
-	despthStencilDesc.DepthEnable = true;
-	despthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
-	despthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+	SettingDepth(
+		despthStencilDesc,
+		true,
+		D3D12_DEPTH_WRITE_MASK_ZERO,
+		D3D12_COMPARISON_FUNC_LESS_EQUAL
+	);
 
 	//PSOの生成
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
@@ -920,7 +884,7 @@ SPSOProperty GraphicsPipelineManager::CreateSprite2dSubtract(ComPtr<ID3D12Device
 	graphicsPipelineStateDesc.SampleDesc.Count = 1;
 	graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 
-	hr = device->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,
+	HRESULT hr = device->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,
 		IID_PPV_ARGS(&SpritePSO.GraphicsPipelineState));
 	assert(SUCCEEDED(hr));
 
@@ -930,11 +894,9 @@ SPSOProperty GraphicsPipelineManager::CreateSprite2dSubtract(ComPtr<ID3D12Device
 SPSOProperty GraphicsPipelineManager::CreateSprite2dMultiply(ComPtr<ID3D12Device> device, Commands commands, SShaderMode shader)
 {
 	SPSOProperty SpritePSO;
-
 	//RootSignature作成
 	D3D12_ROOT_SIGNATURE_DESC descriptionRootSignature{};
 
-	//descriptionRootSignature = CreateDescriptRootSignature();
 	descriptionRootSignature.Flags =
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
@@ -949,7 +911,6 @@ SPSOProperty GraphicsPipelineManager::CreateSprite2dMultiply(ComPtr<ID3D12Device
 	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 	rootParameters[1].Descriptor.ShaderRegister = 0;
 
-
 	//DescriptorRanged
 	D3D12_DESCRIPTOR_RANGE descriptorRange[1] = {};
 	descriptorRange[0].BaseShaderRegister = 0;
@@ -962,7 +923,6 @@ SPSOProperty GraphicsPipelineManager::CreateSprite2dMultiply(ComPtr<ID3D12Device
 	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	rootParameters[2].DescriptorTable.pDescriptorRanges = descriptorRange;
 	rootParameters[2].DescriptorTable.NumDescriptorRanges = _countof(descriptorRange);
-
 
 	//Samplerの設定
 	D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};
@@ -979,73 +939,45 @@ SPSOProperty GraphicsPipelineManager::CreateSprite2dMultiply(ComPtr<ID3D12Device
 	descriptionRootSignature.pStaticSamplers = staticSamplers;
 	descriptionRootSignature.NumStaticSamplers = _countof(staticSamplers);
 
-
 	descriptionRootSignature.pParameters = rootParameters;
 	descriptionRootSignature.NumParameters = _countof(rootParameters);
 
-	//シリアライズしてバイナリにする
-
-
-	HRESULT hr = D3D12SerializeRootSignature(&descriptionRootSignature,
-		D3D_ROOT_SIGNATURE_VERSION_1, &SpritePSO.signatureBlob, &SpritePSO.errorBlob);
-	if (FAILED(hr))
-	{
-		LogManager::Log(reinterpret_cast<char*>(SpritePSO.errorBlob->GetBufferPointer()));
-		assert(false);
-	}
-
-	//バイナリを元に生成
-
-	hr = device->CreateRootSignature(0, SpritePSO.signatureBlob->GetBufferPointer(),
-		SpritePSO.signatureBlob->GetBufferSize(), IID_PPV_ARGS(&SpritePSO.rootSignature));
-	assert(SUCCEEDED(hr));
+	//RootSignatureの作成
+	CreateRootSignature(device, descriptionRootSignature, SpritePSO);
 
 	//InputLayoutの設定
 	D3D12_INPUT_ELEMENT_DESC inputElementDescs[2] = {};
-	inputElementDescs[0].SemanticName = "POSITION";
-	inputElementDescs[0].SemanticIndex = 0;
-	inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	inputElementDescs[0].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-
-	inputElementDescs[1].SemanticName = "TEXCOORD";
-	inputElementDescs[1].SemanticIndex = 0;
-	inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
-	inputElementDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-
+	//Position
+	SettingInputElementDesc(inputElementDescs[0],
+		"POSITION",
+		0,
+		DXGI_FORMAT_R32G32B32A32_FLOAT,
+		D3D12_APPEND_ALIGNED_ELEMENT
+	);
+	//TexCoord
+	SettingInputElementDesc(inputElementDescs[1],
+		"TEXCOORD",
+		0,
+		DXGI_FORMAT_R32G32_FLOAT,
+		D3D12_APPEND_ALIGNED_ELEMENT
+	);
 
 	D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
 	inputLayoutDesc.pInputElementDescs = inputElementDescs;
 	inputLayoutDesc.NumElements = _countof(inputElementDescs);
 
-
 	//BlendStateの設定を行う
 	D3D12_BLEND_DESC blendDesc{};
-	//すべての色要素を書き込む
 	D3D12_RENDER_TARGET_BLEND_DESC& blenddesc = blendDesc.RenderTarget[0];
-	blenddesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-	blenddesc.BlendEnable = true;
-
-	blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
-	blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE;
-	blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;
-	//半透明合成設定
-	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;
-	blenddesc.SrcBlend = D3D12_BLEND_ZERO;
-	blenddesc.DestBlend = D3D12_BLEND_SRC_COLOR;
-
+	SettingBlendState(blenddesc, BlendMultiply);
 
 	//RasterrizerStateぼ設定
 	D3D12_RASTERIZER_DESC rasterizerDesc{};
+	SettingRasterizer(rasterizerDesc, D3D12_CULL_MODE_BACK, D3D12_FILL_MODE_SOLID);
 
-	//裏面（時計回り）を表示しない
-	rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
-	//三角形の中を塗りつぶす
-	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
-
+	//深度の設定
 	D3D12_DEPTH_STENCIL_DESC despthStencilDesc{};
-	despthStencilDesc.DepthEnable = true;
-	despthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
-	despthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+	SettingDepth(despthStencilDesc,true,D3D12_DEPTH_WRITE_MASK_ZERO,D3D12_COMPARISON_FUNC_LESS_EQUAL);
 
 	//PSOの生成
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
@@ -1061,7 +993,6 @@ SPSOProperty GraphicsPipelineManager::CreateSprite2dMultiply(ComPtr<ID3D12Device
 	graphicsPipelineStateDesc.DepthStencilState = despthStencilDesc;
 	graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
-
 	//書き込むRTVの情報
 	graphicsPipelineStateDesc.NumRenderTargets = 1;
 	graphicsPipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
@@ -1074,7 +1005,7 @@ SPSOProperty GraphicsPipelineManager::CreateSprite2dMultiply(ComPtr<ID3D12Device
 	graphicsPipelineStateDesc.SampleDesc.Count = 1;
 	graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 
-	hr = device->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,
+	HRESULT hr = device->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,
 		IID_PPV_ARGS(&SpritePSO.GraphicsPipelineState));
 	assert(SUCCEEDED(hr));
 
@@ -1139,34 +1070,24 @@ SPSOProperty GraphicsPipelineManager::CreateSprite2dScreen(ComPtr<ID3D12Device> 
 
 	//シリアライズしてバイナリにする
 
-
-	HRESULT hr = D3D12SerializeRootSignature(&descriptionRootSignature,
-		D3D_ROOT_SIGNATURE_VERSION_1, &SpritePSO.signatureBlob, &SpritePSO.errorBlob);
-	if (FAILED(hr))
-	{
-		LogManager::Log(reinterpret_cast<char*>(SpritePSO.errorBlob->GetBufferPointer()));
-		assert(false);
-	}
-
-	//バイナリを元に生成
-
-	hr = device->CreateRootSignature(0, SpritePSO.signatureBlob->GetBufferPointer(),
-		SpritePSO.signatureBlob->GetBufferSize(), IID_PPV_ARGS(&SpritePSO.rootSignature));
-	assert(SUCCEEDED(hr));
+	CreateRootSignature(device, descriptionRootSignature, SpritePSO);
 
 	//InputLayoutの設定
 	D3D12_INPUT_ELEMENT_DESC inputElementDescs[2] = {};
-	inputElementDescs[0].SemanticName = "POSITION";
-	inputElementDescs[0].SemanticIndex = 0;
-	inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	inputElementDescs[0].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-
-	inputElementDescs[1].SemanticName = "TEXCOORD";
-	inputElementDescs[1].SemanticIndex = 0;
-	inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
-	inputElementDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-
-
+	//Position
+	SettingInputElementDesc(inputElementDescs[0],
+		"POSITION",
+		0,
+		DXGI_FORMAT_R32G32B32A32_FLOAT,
+		D3D12_APPEND_ALIGNED_ELEMENT
+	);
+	//TexCoord
+	SettingInputElementDesc(inputElementDescs[1],
+		"TEXCOORD",
+		0,
+		DXGI_FORMAT_R32G32_FLOAT,
+		D3D12_APPEND_ALIGNED_ELEMENT
+	);
 	D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
 	inputLayoutDesc.pInputElementDescs = inputElementDescs;
 	inputLayoutDesc.NumElements = _countof(inputElementDescs);
@@ -1176,25 +1097,11 @@ SPSOProperty GraphicsPipelineManager::CreateSprite2dScreen(ComPtr<ID3D12Device> 
 	D3D12_BLEND_DESC blendDesc{};
 	//すべての色要素を書き込む
 	D3D12_RENDER_TARGET_BLEND_DESC& blenddesc = blendDesc.RenderTarget[0];
-	blenddesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-	blenddesc.BlendEnable = true;
-
-	blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
-	blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE;
-	blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;
-	//半透明合成設定
-	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;
-	blenddesc.SrcBlend = D3D12_BLEND_INV_DEST_COLOR;
-	blenddesc.DestBlend = D3D12_BLEND_ONE;
-
+	SettingBlendState(blenddesc, BlendScreen);
 
 	//RasterrizerStateぼ設定
 	D3D12_RASTERIZER_DESC rasterizerDesc{};
-
-	//裏面（時計回り）を表示しない
-	rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
-	//三角形の中を塗りつぶす
-	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
+	SettingRasterizer(rasterizerDesc, D3D12_CULL_MODE_BACK, D3D12_FILL_MODE_SOLID);
 
 	D3D12_DEPTH_STENCIL_DESC despthStencilDesc{};
 	despthStencilDesc.DepthEnable = true;
@@ -1228,7 +1135,7 @@ SPSOProperty GraphicsPipelineManager::CreateSprite2dScreen(ComPtr<ID3D12Device> 
 	graphicsPipelineStateDesc.SampleDesc.Count = 1;
 	graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 
-	hr = device->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,
+	HRESULT hr = device->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,
 		IID_PPV_ARGS(&SpritePSO.GraphicsPipelineState));
 	assert(SUCCEEDED(hr));
 
