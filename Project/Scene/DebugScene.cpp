@@ -17,7 +17,14 @@ void DebugScene::Initialize(GameManager* Scene)
 	sprite_->SetTexHandle(SpriteTexHandle);
 	sprite_->Initialize(new SpriteBoxState,{0,0},{320,320});
 
+	sprite2_ = make_unique<Sprite>();
+	sprite2_->SetTexHandle(SpriteTexHandle);
+	sprite2_->Initialize(new SpriteBoxState,{640,0},{320,320});
+
+	
+	sprite2WorldTransform_.Initialize();
 	spriteWorldTransform_.Initialize();
+	sprite2WorldTransform_.parent= &spriteWorldTransform_;
 }
 
 void DebugScene::Update(GameManager* Scene)
@@ -34,13 +41,15 @@ void DebugScene::Update(GameManager* Scene)
 
 	ImGui::Begin("Sprite");
 	ImGui::ColorPicker4("color", &color.x);
-	
+	ImGui::DragFloat3("Rotate", &spriteWorldTransform_.rotation.x, 0.1f);
 	ImGui::Checkbox("NONE", &NoneFlag);
 	ImGui::Checkbox("Add", &AddFlag);
 	ImGui::Checkbox("Subtract", &SubtractFlag);
 	ImGui::Checkbox("Multiply", &MultiplyFlag);
 	ImGui::Checkbox("Screen", &ScreenFlag);
 	ImGui::End();
+
+
 #pragma region 
 	if (NoneFlag)
 	{
@@ -98,6 +107,7 @@ void DebugScene::Update(GameManager* Scene)
 	}
 	
 	spriteWorldTransform_.UpdateMatrix();
+	sprite2WorldTransform_.UpdateMatrix();
 
 	viewProjection.UpdateMatrix();
 	viewProjection = DebugTools::ConvertViewProjection(viewProjection);
@@ -105,7 +115,7 @@ void DebugScene::Update(GameManager* Scene)
 
 void DebugScene::Draw(GameManager* Scene)
 {
-
+	sprite2_->Draw(sprite2WorldTransform_);
 	sprite_->Draw(spriteWorldTransform_);
 
 	Scene;

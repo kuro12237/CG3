@@ -36,6 +36,9 @@ private:
 	unique_ptr<Sprite>sprite_ = nullptr;
 	WorldTransform spriteWorldTransform_{};
 	
+	unique_ptr<Sprite>sprite2_ = nullptr;
+	WorldTransform sprite2WorldTransform_{};
+
 	uint32_t SpriteTexHandle = 0;
 	Vector4 color = { 1,1,1,1 };
 

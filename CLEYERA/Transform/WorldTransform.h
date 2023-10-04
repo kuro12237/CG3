@@ -18,17 +18,13 @@ struct WorldTransform
 	Vector3 translate = {0.0f,0.0f,0.0f};
 
 	Matrix4x4 matWorld = {};
+	const WorldTransform* parent = {};
 
 	void Initialize();
 
 	void UpdateMatrix();
 
 	void TransfarMatrix(ComPtr<ID3D12Resource>&wvpResource, ViewProjection viewProjection, Projection Flag=PerspectiveFov);
-
-
-
-
-
 
 };
 

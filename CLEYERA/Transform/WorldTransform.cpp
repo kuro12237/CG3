@@ -9,6 +9,11 @@ void WorldTransform::Initialize()
 void WorldTransform::UpdateMatrix()
 {
 	matWorld = MatrixTransform::AffineMatrix(scale, rotation, translate);
+	
+	if (parent) {
+		matWorld = MatrixTransform::Multiply(matWorld, parent->matWorld);
+	}
+
 }
 
 void WorldTransform::TransfarMatrix(ComPtr<ID3D12Resource>& wvpResource, ViewProjection viewProjection, Projection Flag )
