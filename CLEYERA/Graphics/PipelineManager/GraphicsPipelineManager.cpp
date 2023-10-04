@@ -1267,8 +1267,6 @@ SPSOProperty GraphicsPipelineManager::CreateHerf_Lambert(ComPtr<ID3D12Device> de
 	despthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 	despthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 
-
-
 	//PSOÇÃê∂ê¨
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
 
@@ -1282,7 +1280,6 @@ SPSOProperty GraphicsPipelineManager::CreateHerf_Lambert(ComPtr<ID3D12Device> de
 	graphicsPipelineStateDesc.RasterizerState = rasterizerDesc; //RasterizerState
 	graphicsPipelineStateDesc.DepthStencilState = despthStencilDesc;
 	graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
-
 
 	//èëÇ´çûÇﬁRTVÇÃèÓïÒ
 	graphicsPipelineStateDesc.NumRenderTargets = 1;
