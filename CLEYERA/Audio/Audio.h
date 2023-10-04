@@ -1,5 +1,6 @@
 #pragma once
 #include"Pch.h"
+#include"LogManager.h"
 
 /// <summary>
 /// チャンクヘッダー
@@ -58,6 +59,6 @@ private:
 
 	static const uint32_t kSoundDataMax = 4;
     soundData soundData_[kSoundDataMax]{};
-	
+	bool InitializeFlag = false;
 };
 

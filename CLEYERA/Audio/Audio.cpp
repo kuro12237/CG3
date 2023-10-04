@@ -17,12 +17,21 @@ Audio* Audio::GetInstance()
 void Audio::Initialize()
 {
 	HRESULT hr{};
+	if (!Audio::GetInstance()->InitializeFlag)
+	{
+		Audio::GetInstance()->InitializeFlag = true;
+	}
+	else {
+		LogManager::Log("Audio::Initialize_ERROR\n");
+
+		assert(0);
+	}
+
 	hr = XAudio2Create(&Audio::GetInstance()->xAudio, 0, XAUDIO2_DEFAULT_PROCESSOR);
 	assert(SUCCEEDED(hr));
 	//master‚Ìƒ{ƒCƒX‚Ìì¬
 	hr = Audio::GetInstance()->xAudio->CreateMasteringVoice(&Audio::GetInstance()->masterVoice);
 	assert(SUCCEEDED(hr));
-
 }
 
 void Audio::Finalize()

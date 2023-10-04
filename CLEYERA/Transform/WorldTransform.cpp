@@ -13,7 +13,6 @@ void WorldTransform::UpdateMatrix()
 	if (parent) {
 		matWorld = MatrixTransform::Multiply(matWorld, parent->matWorld);
 	}
-
 }
 
 void WorldTransform::TransfarMatrix(ComPtr<ID3D12Resource>& wvpResource, ViewProjection viewProjection, Projection Flag )
