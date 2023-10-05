@@ -96,9 +96,6 @@ void Audio::SoundUnLoad()
 		Audio::GetInstance()->soundData_[i].bufferSize = 0;
 		Audio::GetInstance()->soundData_[i].wfex = {};
 	}
-
-	//‚·‚×‚Ä‹ó“ñ‚·‚é
-
 	Audio::GetInstance()->soundDataCount_ = 0;
 }
 
@@ -117,4 +114,5 @@ void Audio::AudioPlayWave(uint32_t soundHandle)
 	result = pSourcevoice->SubmitSourceBuffer(&buf);
 	result = pSourcevoice->Start();
 
+	assert(SUCCEEDED(result));
 }
