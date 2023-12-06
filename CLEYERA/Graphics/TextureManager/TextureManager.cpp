@@ -38,12 +38,12 @@ TextureManager* TextureManager::GetInstance()
 }
 DirectX::ScratchImage TextureManager::CreateMipImage(const std::string& filePath)
 {
-	//ƒeƒNƒXƒ`ƒƒƒtƒ@ƒCƒ‹‚ğ“Ç‚İ‚İƒvƒƒOƒ‰ƒ€‚Åˆµ‚¦‚é‚æ‚¤‚É‚·‚é
+	//ï¿½eï¿½Nï¿½Xï¿½`ï¿½ï¿½ï¿½tï¿½@ï¿½Cï¿½ï¿½ï¿½ï¿½Ç‚İï¿½ï¿½İƒvï¿½ï¿½ï¿½Oï¿½ï¿½ï¿½ï¿½ï¿½Åˆï¿½ï¿½ï¿½ï¿½ï¿½æ‚¤ï¿½É‚ï¿½ï¿½ï¿½
 	DirectX::ScratchImage image{};
 	std::wstring filePathW = LogManager::ConvertString(filePath);
 	HRESULT hr = DirectX::LoadFromWICFile(filePathW.c_str(), DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
 	assert(SUCCEEDED(hr));
-	//ƒ~ƒbƒvƒ}ƒbƒv‚Ìì¬
+	//ï¿½~ï¿½bï¿½vï¿½}ï¿½bï¿½vï¿½Ìì¬
 	DirectX::ScratchImage mipImage{};
 	hr = DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DirectX::TEX_FILTER_SRGB, 0, mipImage);
 
@@ -117,11 +117,11 @@ ComPtr<ID3D12Resource> TextureManager::CreateTexResource(const DirectX::TexMetad
 	D3D12_RESOURCE_DESC resourceDesc{};
 	D3D12_HEAP_PROPERTIES heapProperties{};
 
-	//ƒŠƒ\[ƒX‚Ìİ’è
+	//ï¿½ï¿½ï¿½\ï¿½[ï¿½Xï¿½Ìİ’ï¿½
 	resourceDesc = SettingResource(metadata);
 	heapProperties = SettingHeap();
 
-	//–{‘Ì‚ğì‚é
+	//ï¿½{ï¿½Ì‚ï¿½ï¿½ï¿½
 	DirectXCommon::GetInstance()->GetDevice()->CreateCommittedResource(
 		&heapProperties,
 		D3D12_HEAP_FLAG_NONE,
@@ -147,7 +147,7 @@ uint32_t TextureManager::LoadTexture(const std::string& filePath)
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MipLevels = UINT(metadata.mipLevels);
-	//«ŠÖ”‰»
+	//ï¿½ï¿½ï¿½Öï¿½ï¿½ï¿½
 
 	TextureManager::GetInstance()->tex[indexTex].SrvHandleCPU = GetCPUDescriptorHandle(
 		DirectXCommon::GetInstance()->GetSrvHeap().Get(), descripterSize_.SRV, indexTex

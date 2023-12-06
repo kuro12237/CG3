@@ -3,7 +3,7 @@
 #include"LogManager.h"
 
 /// <summary>
-/// ƒ`ƒƒƒ“ƒNƒwƒbƒ_[
+/// ï¿½`ï¿½ï¿½ï¿½ï¿½ï¿½Nï¿½wï¿½bï¿½_ï¿½[
 /// </summary>
 struct ChunkHeader
 {
@@ -12,7 +12,7 @@ struct ChunkHeader
 };
 
 /// <summary>
-/// Riffƒwƒbƒ_ƒ`ƒƒƒ“ƒN
+/// Riffï¿½wï¿½bï¿½_ï¿½`ï¿½ï¿½ï¿½ï¿½ï¿½N
 /// </summary>
 struct RiffHeader
 {

@@ -29,14 +29,14 @@ public:
 
 	static TextureManager* GetInstance();
 	/// <summary>
-	/// ÀÛ‚Ég‚¤ˆ—
+	/// ï¿½ï¿½ï¿½Û‚Égï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	/// </summary>
 	/// <param name="filePath"></param>
 	/// <returns></returns>
 	static uint32_t LoadTexture(const std::string& filePath);
 
 	/// <summary>
-	/// ‚·‚×‚Ä‚Ìtex‚Ì‰ğ•ú
+	/// ï¿½ï¿½ï¿½×‚Ä‚ï¿½texï¿½Ì‰ï¿½ï¿½
 	/// </summary>
 	/// <param name="texHandle"></param>
 	/// <returns></returns>
@@ -56,14 +56,14 @@ private:
 	static D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(ComPtr<ID3D12DescriptorHeap> descripterHeap, uint32_t desiripterSize, uint32_t index);
 
 	/// <summary>
-	///	ƒŠƒ\[ƒX‚Ìİ’è 
+	///	ï¿½ï¿½ï¿½\ï¿½[ï¿½Xï¿½Ìİ’ï¿½ 
 	/// </summary>
 	/// <param name="metadata"></param>
 	/// <returns></returns>
 	static D3D12_RESOURCE_DESC SettingResource(const DirectX::TexMetadata& metadata);
 
 	/// <summary>
-	/// ƒq[ƒv‚Ìİ’è
+	/// ï¿½qï¿½[ï¿½vï¿½Ìİ’ï¿½
 	/// </summary>
 	/// <returns></returns>
 	static D3D12_HEAP_PROPERTIES SettingHeap();

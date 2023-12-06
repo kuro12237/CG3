@@ -31,13 +31,13 @@ void ModelSphereState::Draw(Model* state, WorldTransform worldTransform, ViewPro
 	resource_.Material->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
 	resource_.Index->Map(0, nullptr, reinterpret_cast<void**>(&indexData));
 
-#pragma region ‹…‚ÌÀ•Wˆ—
+#pragma region ï¿½ï¿½ï¿½Ìï¿½ï¿½Wï¿½ï¿½ï¿½ï¿½
 	const float LON_EVERY = float(std::numbers::pi) * 2.0f / float(VertexNum);
 
 	const float LAT_EVERY = float(std::numbers::pi) / float(VertexNum);
 	{
 		for (int latIndex = 0; latIndex < VertexNum; ++latIndex) {
-			//ƒÆ
+			//ï¿½ï¿½
 			float lat = -float(std::numbers::pi) / 2.0f + LAT_EVERY * latIndex;
 
 			for (int lonIndex = 0; lonIndex < VertexNum; ++lonIndex) {
@@ -135,7 +135,7 @@ void ModelSphereState::CommandCall(Model*state)
 	
 	PSO = GraphicsPipelineManager::GetInstance()->GetPso().shape;
 
-	//ƒeƒNƒXƒ`ƒƒ‚ª‚ ‚éê‡
+	//ï¿½eï¿½Nï¿½Xï¿½`ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ê‡
 	if (!state->GetTexHandle() == 0) {
 		PSO = GraphicsPipelineManager::GetInstance()->GetPso().Sprite3d.none;
 	}

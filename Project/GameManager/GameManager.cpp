@@ -8,7 +8,7 @@ GameManager::GameManager()
 
 	Grid* grid = new Grid();
 	grid->Initialize();
-	//GridCommand‚ðƒZƒbƒg
+	//GridCommandï¿½ï¿½Zï¿½bï¿½g
 	DebugTools::addCommand(grid,"Grid");
 
 	DebugCamera* debugcamera = new DebugCamera();
